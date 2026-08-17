@@ -8,7 +8,7 @@ const signup = async (req, res) => {
         console.log(req.body)
         const users = await User.find({ email: req.body.email })
         if (users.length > 0) {
-            return res.status(500).json({
+            return res.status(409).json({
                 error: 'email already registered....'
             })
         }
