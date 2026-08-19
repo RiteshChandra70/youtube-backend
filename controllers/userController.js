@@ -64,7 +64,10 @@ const login = async (req, res) => {
         )
 
         res.status(200).json({
-            token: token
+            token: token,
+            channelName: users[0].channelName,
+            userId: users[0]._id,
+            email: users[0].email
         })
 
     }
@@ -123,27 +126,26 @@ const unsubscribe = async (req, res) => {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
-        const channel = await User.findById(channelId) 
-        if(!channel.subscribers.includes(tokenData._id))
-        {
+        const channel = await User.findById(channelId)
+        if (!channel.subscribers.includes(tokenData._id)) {
             return res.status(500).json({
-                error:'you have not subscribed this channel'
+                error: 'you have not subscribed this channel'
             })
         }
 
-        const filterData = channel.subscribers.filter(userId=>userId != tokenData._id)
+        const filterData = channel.subscribers.filter(userId => userId != tokenData._id)
         channel.subscribers = filterData
 
         await channel.save()
         console.log(channel._id)
         const user = await User.findById(tokenData._id)
-        const filterSubscribeTo = user.subscribedTo.filter(userId=> userId != channelId)
+        const filterSubscribeTo = user.subscribedTo.filter(userId => userId != channelId)
         console.log(filterSubscribeTo)
         user.subscribedTo = filterSubscribeTo
         await user.save()
 
         res.status(200).json({
-            msg:'unsubscribed...'
+            msg: 'unsubscribed...'
         })
 
 
@@ -157,15 +159,13 @@ const unsubscribe = async (req, res) => {
 }
 
 
-const uploadProfile = async(req,res)=>{
-    try
-    {
+const uploadProfile = async (req, res) => {
+    try {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
         const user = await User.findById(tokenData._id)
 
-        if(user.profilePicUrl)
-        {
+        if (user.profilePicUrl) {
             await cloudinary.uploader.destroy(user.profilePicId)
         }
         const uploadedProfile = await cloudinary.uploader.upload(req.files.profile.tempFilePath)
@@ -175,11 +175,10 @@ const uploadProfile = async(req,res)=>{
 
         await user.save()
         res.status(200).json({
-            msg:'profile pic updated'
+            msg: 'profile pic updated'
         })
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
 
@@ -188,15 +187,13 @@ const uploadProfile = async(req,res)=>{
 }
 
 
-const uploadCoverProfilePic = async(req,res)=>{
-    try
-    {
+const uploadCoverProfilePic = async (req, res) => {
+    try {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
         const user = await User.findById(tokenData._id)
 
-        if(user.coverPicUrl)
-        {
+        if (user.coverPicUrl) {
             await cloudinary.uploader.destroy(user.coverPicId)
         }
         const uploadedProfile = await cloudinary.uploader.upload(req.files.coverPic.tempFilePath)
@@ -205,11 +202,10 @@ const uploadCoverProfilePic = async(req,res)=>{
 
         await user.save()
         res.status(200).json({
-            msg:'cover pic updated'
+            msg: 'cover pic updated'
         })
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err)
         res.status(500).json({
 
