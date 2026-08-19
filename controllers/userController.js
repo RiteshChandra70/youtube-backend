@@ -23,6 +23,7 @@ const signup = async (req, res) => {
         const result = await newUser.save()
         res.status(200).json({
             msg: 'account created',
+            token: token,
             newUser: {
                 _id: result._id,
                 channelName: result.channelName
