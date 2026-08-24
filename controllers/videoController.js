@@ -47,22 +47,18 @@ const upload = async (req, res) => {
 // ******************* Get All Videos *******************
 const getAllVideo = async (req, res) => {
     try {
-        const token = req.headers.authorization.split(" ")[1];
-        const tokenData = jwt.verify(token, process.env.SEC_KEY);
-
-        const data = await Video.find({
-            uploadedBy: tokenData._id
-        });
+        const data = await Video.find().populate('uploadedBy','channelName profilePicUrl')
 
         return res.status(200).json({
             Video: data
-        });
+        })
 
     } catch (err) {
         console.log(err);
-        res.status(500).json({
-            error: err
-        });
+
+        return res.status(500).json({
+            error: err.message
+        })
     }
 }
 
