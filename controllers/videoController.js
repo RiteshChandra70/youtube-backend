@@ -8,6 +8,8 @@ const upload = async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        
+        console.log("TOKEN DATA:", tokenData)
         console.log(req.files)
         const uploadedVideo = await cloudinary.uploader.upload(req.files.video.tempFilePath, {
             resource_type: 'video',
@@ -27,7 +29,7 @@ const upload = async (req, res) => {
             thumbnailUrl: uploadedThumbnail.secure_url,
             thumbnailPublicId: uploadedThumbnail.public_id,
             uploadedBy: tokenData._id,
-            tags: req.body.tags
+            tags: req.body.tags.split(',').map(tag => tag.trim().filter(tag => tag.length > 0))
         })
 
         const newUploadedVideo = await newVideo.save()
