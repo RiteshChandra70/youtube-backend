@@ -8,7 +8,7 @@ const upload = async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1]
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
-        
+
         console.log("TOKEN DATA:", tokenData)
         console.log(req.files)
         const uploadedVideo = await cloudinary.uploader.upload(req.files.video.tempFilePath, {
@@ -29,7 +29,7 @@ const upload = async (req, res) => {
             thumbnailUrl: uploadedThumbnail.secure_url,
             thumbnailPublicId: uploadedThumbnail.public_id,
             uploadedBy: tokenData._id,
-            tags: req.body.tags.split(',').map(tag => tag.trim().filter(tag => tag.length > 0))
+            tags: JSON.parse(req.body.tags).map(tag => tag.trim()).filter(tag => tag.length > 0)
         })
 
         const newUploadedVideo = await newVideo.save()
@@ -49,7 +49,7 @@ const upload = async (req, res) => {
 // ******************* Get All Videos *******************
 const getAllVideo = async (req, res) => {
     try {
-        const data = await Video.find().populate('uploadedBy','channelName profilePicUrl')
+        const data = await Video.find().populate('uploadedBy', 'channelName profilePicUrl')
 
         return res.status(200).json({
             Video: data
@@ -177,7 +177,7 @@ const updateVideoDetails = async (req, res) => {
         const newVideoDetails = new Video({
             title: req.body.title || video.title,
             description: req.body.description || video.description
-        }) 
+        })
 
         const updatedVideo = await Video.findByIdAndUpdate(videoId, newVideoDetails, { new: true })
         res.status(200).json({
