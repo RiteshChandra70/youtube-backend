@@ -69,8 +69,6 @@ const getAllVideo = async (req, res) => {
 // ******************* Get Video by ID *******************
 const getVideoById = async (req, res) => {
     try {
-        const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
         const videoId = req.params.videoId
         const data = await Video.findById(videoId).populate('uploadedBy', 'channelName profilePicUrl')
