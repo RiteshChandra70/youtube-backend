@@ -24,6 +24,7 @@ const upload = async (req, res) => {
         const newVideo = new Video({
             title: req.body.title,
             description: req.body.description,
+            category: req.body.category,
             videoUrl: uploadedVideo.secure_url,
             videoPublicId: uploadedVideo.public_id,
             thumbnailUrl: uploadedThumbnail.secure_url,
