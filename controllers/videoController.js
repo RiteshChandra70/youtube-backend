@@ -73,7 +73,7 @@ const getVideoById = async (req, res) => {
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
         const videoId = req.params.videoId
-        const data = await Video.findById(videoId)
+        const data = await Video.findById(videoId).populate('uploadedBy', 'channelName profilePicUrl')
         if (!data) {
             return res.status(404).json({
                 message: "Video not found"
