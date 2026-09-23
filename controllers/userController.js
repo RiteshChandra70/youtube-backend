@@ -5,14 +5,21 @@ const cloudinary = require('../configure/cloudinary')
 
 const signup = async (req, res) => {
     try {
+
         console.log(req.body)
-        const users = await User.find({ email: req.body.email })
+
+        const users = await User.find({
+            email: req.body.email
+        })
+
         if (users.length > 0) {
             return res.status(409).json({
                 error: 'email already registered....'
             })
         }
+
         const hashCode = await bcrypt.hash(req.body.password, 10)
+
         const newUser = new User({
             channelName: req.body.channelName,
             email: req.body.email,
@@ -21,7 +28,21 @@ const signup = async (req, res) => {
         })
 
         const result = await newUser.save()
-        res.status(200).json({
+
+        // Create JWT token
+        const token = jwt.sign(
+            {
+                _id: result._id,
+                channelName: result.channelName,
+                email: result.email
+            },
+            process.env.SEC_KEY,
+            {
+                expiresIn: '365d'
+            }
+        )
+
+        return res.status(200).json({
             msg: 'account created',
             token: token,
             newUser: {
@@ -29,11 +50,14 @@ const signup = async (req, res) => {
                 channelName: result.channelName
             }
         })
+
     }
     catch (err) {
+
         console.log(err)
-        res.status(500).json({
-            error: err
+
+        return res.status(500).json({
+            error: err.message
         })
     }
 }
