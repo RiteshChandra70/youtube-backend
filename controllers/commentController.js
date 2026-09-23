@@ -41,6 +41,54 @@ const addComment = async (req, res) => {
 }
 
 
+// ******************* Get Comment *******************
+const getComment = async (req, res) => {
+    try {
+        const comment = await Comment.findById(req.params.commentId)
+
+        if (!comment) {
+            return res.status(404).json({
+                message: "Comment not found"
+            })
+        }
+
+        return res.status(200).json({
+            Comment: comment
+        })
+
+    } catch (err) {
+        console.log(err)
+
+        res.status(500).json({
+            error: err
+        })
+    }
+}
+
+
+// ******************* Get All Comments of Video *******************
+const getAllComment = async (req, res) => {
+    try {
+
+        const comments = await Comment.find({
+            videoId: req.params.videoId
+        })
+        .populate("commentBy", "profilePicUrl channelName")
+
+        return res.status(200).json({
+            comments: comments
+        })
+
+    } catch (err) {
+
+        console.log(err)
+
+        return res.status(500).json({
+            error: err.message
+        })
+    }
+}
+
 // ******************* Edit Comment *******************
 const editComment = async (req, res) => {
     try {
@@ -172,4 +220,4 @@ const deleteComment = async (req, res) => {
 }
 
 
-module.exports = { addComment, editComment, deleteComment, likeUnlike, dislikeUndislike }
+module.exports = { addComment, editComment, deleteComment, likeUnlike, dislikeUndislike, getComment, getAllComment }
