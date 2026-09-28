@@ -50,7 +50,7 @@ const upload = async (req, res) => {
 // ******************* Get All Videos *******************
 const getAllVideo = async (req, res) => {
     try {
-        const data = await Video.find().populate('uploadedBy', 'channelName profilePicUrl')
+        const data = await Video.find().populate('uploadedBy', 'channelName profilePicUrl subscribers')
 
         return res.status(200).json({
             Video: data

@@ -112,7 +112,7 @@ const subscribe = async (req, res) => {
         const tokenData = jwt.verify(token, process.env.SEC_KEY)
 
         if (channelId == tokenData._id) {
-            return res.status(500).json({
+            return res.status(400).json({
                 error: 'you cant subscribe yourself'
             })
         }
@@ -120,7 +120,7 @@ const subscribe = async (req, res) => {
         const channel = await User.findById(channelId)
 
         if (channel.subscribers.includes(tokenData._id)) {
-            return res.status(500).json({
+            return res.status(400).json({
                 error: 'you already subscribed'
             })
         }
