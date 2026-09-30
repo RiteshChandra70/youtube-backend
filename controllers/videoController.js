@@ -71,7 +71,7 @@ const getVideoById = async (req, res) => {
     try {
 
         const videoId = req.params.videoId
-        const data = await Video.findById(videoId).populate('uploadedBy', 'channelName profilePicUrl')
+        const data = await Video.findById(videoId).populate('uploadedBy', 'channelName profilePicUrl subscribers')
         if (!data) {
             return res.status(404).json({
                 message: "Video not found"
