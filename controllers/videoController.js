@@ -98,70 +98,117 @@ const getVideoById = async (req, res) => {
 const likeUnlike = async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1];
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.SEC_KEY);
 
-        const userId = tokenData._id
-        console.log(req.params.videoId)
+        const userId = tokenData._id;
+        const videoId = req.params.videoId;
 
-        const video = await Video.findById(req.params.videoId)
+        console.log("VIDEO ID:", videoId);
+        console.log("USER ID:", userId);
 
-        console.log(video)
+        const video = await Video.findById(videoId);
 
-        if (video.likeUsers.includes(userId)) {
-            video.likeUsers = video.likeUsers.filter(userId => userId != userId)
+        if (!video) {
+            return res.status(404).json({
+                message: "Video not found"
+            });
         }
-        else {
-            if (video.dislikeUsers.includes(userId)) {
-                video.dislikeUsers = video.dislikeUsers.filter(userId => userId != userId)
-            }
-            video.likeUsers.push(userId)
+
+        // Check if user already liked
+        const alreadyLiked = video.likeUsers.some(
+            id => id.toString() === userId.toString()
+        );
+
+        if (alreadyLiked) {
+
+            // UNLIKE
+            video.likeUsers = video.likeUsers.filter(
+                id => id.toString() !== userId.toString()
+            );
+
+        } else {
+
+            // If user disliked before, remove dislike
+            video.dislikeUsers = video.dislikeUsers.filter(
+                id => id.toString() !== userId.toString()
+            );
+
+            // LIKE
+            video.likeUsers.push(userId);
         }
-        await video.save()
+
+        await video.save();
+
         res.status(200).json({
+            message: alreadyLiked ? "Video unliked" : "Video liked",
             video: video
-        })
-    }
-    catch (err) {
+        });
+
+    } catch (err) {
+        console.log(err);
+
         res.status(500).json({
             error: err.message
-        })
+        });
     }
-}
+};
 
 
 // ******************* Dislike/Undislike Video *******************
 const dislikeUndislike = async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1];
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.SEC_KEY);
 
-        const userId = tokenData._id
-        console.log(req.params.videoId)
+        const userId = tokenData._id;
+        const videoId = req.params.videoId;
 
-        const video = await Video.findById(req.params.videoId)
+        const video = await Video.findById(videoId);
 
-        console.log(video)
-
-        if (video.dislikeUsers.includes(userId)) {
-            video.dislikeUsers = video.dislikeUsers.filter(userId => userId != userId)
+        if (!video) {
+            return res.status(404).json({
+                message: "Video not found"
+            });
         }
-        else {
-            if (video.likeUsers.includes(userId)) {
-                video.likeUsers = video.likeUsers.filter(userId => userId != userId)
-            }
-            video.dislikeUsers.push(userId)
+
+        // Check if user already disliked
+        const alreadyDisliked = video.dislikeUsers.some(
+            id => id.toString() === userId.toString()
+        );
+
+        if (alreadyDisliked) {
+
+            // UNDISLIKE
+            video.dislikeUsers = video.dislikeUsers.filter(
+                id => id.toString() !== userId.toString()
+            );
+
+        } else {
+
+            // If user liked before, remove like
+            video.likeUsers = video.likeUsers.filter(
+                id => id.toString() !== userId.toString()
+            );
+
+            // DISLIKE
+            video.dislikeUsers.push(userId);
         }
-        await video.save()
+
+        await video.save();
+
         res.status(200).json({
+            message: alreadyDisliked ? "Video undisliked" : "Video disliked",
             video: video
-        })
-    }
-    catch (err) {
+        });
+
+    } catch (err) {
+        console.log(err);
+
         res.status(500).json({
             error: err.message
-        })
+        });
     }
-}
+};
 
 
 // ******************* Update Video Details *******************
