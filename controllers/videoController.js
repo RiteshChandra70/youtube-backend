@@ -103,9 +103,6 @@ const likeUnlike = async (req, res) => {
         const userId = tokenData._id;
         const videoId = req.params.videoId;
 
-        console.log("VIDEO ID:", videoId);
-        console.log("USER ID:", userId);
-
         const video = await Video.findById(videoId);
 
         if (!video) {
@@ -114,7 +111,6 @@ const likeUnlike = async (req, res) => {
             });
         }
 
-        // Check if user already liked
         const alreadyLiked = video.likeUsers.some(
             id => id.toString() === userId.toString()
         );
@@ -128,7 +124,7 @@ const likeUnlike = async (req, res) => {
 
         } else {
 
-            // If user disliked before, remove dislike
+            // Remove dislike if already disliked
             video.dislikeUsers = video.dislikeUsers.filter(
                 id => id.toString() !== userId.toString()
             );
@@ -138,6 +134,12 @@ const likeUnlike = async (req, res) => {
         }
 
         await video.save();
+
+        // IMPORTANT: uploadedBy ko populate karo
+        await video.populate(
+            'uploadedBy',
+            'channelName profilePicUrl subscribers'
+        );
 
         res.status(200).json({
             message: alreadyLiked ? "Video unliked" : "Video liked",
@@ -171,7 +173,6 @@ const dislikeUndislike = async (req, res) => {
             });
         }
 
-        // Check if user already disliked
         const alreadyDisliked = video.dislikeUsers.some(
             id => id.toString() === userId.toString()
         );
@@ -185,7 +186,7 @@ const dislikeUndislike = async (req, res) => {
 
         } else {
 
-            // If user liked before, remove like
+            // Remove like if already liked
             video.likeUsers = video.likeUsers.filter(
                 id => id.toString() !== userId.toString()
             );
@@ -195,6 +196,12 @@ const dislikeUndislike = async (req, res) => {
         }
 
         await video.save();
+
+        // IMPORTANT: uploadedBy ko populate karo
+        await video.populate(
+            'uploadedBy',
+            'channelName profilePicUrl subscribers'
+        );
 
         res.status(200).json({
             message: alreadyDisliked ? "Video undisliked" : "Video disliked",
@@ -215,10 +222,10 @@ const dislikeUndislike = async (req, res) => {
 const updateVideoDetails = async (req, res) => {
     try {
         const token = req.headers.authorization.split(" ")[1];
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.SEC_KEY);
 
-        const videoId = req.params.videoId
-        const video = await Video.findById(videoId)
+        const videoId = req.params.videoId;
+        const video = await Video.findById(videoId);
 
         const newVideoDetails = new Video({
             title: req.body.title || video.title,
@@ -241,11 +248,11 @@ const updateVideoDetails = async (req, res) => {
 // ******************* Delete Video *******************
 const deleteVideo = async (req, res) => {
     try {
-        const token = req.headers.authorization.split(" ")[1]
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const token = req.headers.authorization.split(" ")[1];
+        const tokenData = jwt.verify(token, process.env.SEC_KEY);
 
-        const videoId = req.params.videoId
-        const video = await Video.findById(videoId)
+        const videoId = req.params.videoId;
+        const video = await Video.findById(videoId);
 
         if (!video) {
             return res.status(404).json({
