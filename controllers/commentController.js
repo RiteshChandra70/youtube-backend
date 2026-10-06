@@ -70,22 +70,59 @@ const getComment = async (req, res) => {
 const getAllComment = async (req, res) => {
     try {
 
+        const token = req.headers.authorization?.split(" ")[1];
+
+        let userId = null;
+
+        if (token) {
+            const tokenData = jwt.verify(token, process.env.SEC_KEY);
+            userId = tokenData._id.toString();
+        }
+
         const comments = await Comment.find({
             videoId: req.params.videoId
         })
-        .populate("commentBy", "profilePicUrl channelName")
+        .populate("commentBy", "channelName profilePicUrl");
+
+        const commentsData = comments.map(comment => {
+
+            const isLike = userId
+                ? comment.likeBy.some(
+                    id => id.toString() === userId
+                )
+                : false;
+
+            const isDislike = userId
+                ? comment.dislikeBy.some(
+                    id => id.toString() === userId
+                )
+                : false;
+
+            return {
+                _id: comment._id,
+                comment: comment.comment,
+                commentBy: comment.commentBy,
+                createdAt: comment.createdAt,
+
+                likeCount: comment.likeBy.length,
+                dislikeCount: comment.dislikeBy.length,
+
+                isLike: isLike,
+                isDislike: isDislike
+            };
+        });
 
         return res.status(200).json({
-            comments: comments
-        })
+            comments: commentsData
+        });
 
     } catch (err) {
 
-        console.log(err)
+        console.log(err);
 
         return res.status(500).json({
             error: err.message
-        })
+        });
     }
 }
 
@@ -93,10 +130,17 @@ const getAllComment = async (req, res) => {
 const editComment = async (req, res) => {
     try {
 
-        const token = req.headers.authorization.split(" ")[1];
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const token = req.headers.authorization?.split(" ")[1];
 
-        const comment = await Comment.findById(req.params.commentId)
+        if (!token) {
+            return res.status(401).json({
+                message: "Unauthorized"
+            });
+        }
+
+        const tokenData = jwt.verify(token, process.env.SEC_KEY);
+
+        const comment = await Comment.findById(req.params.commentId);
 
         if (!comment) {
             return res.status(404).json({
@@ -129,31 +173,62 @@ const editComment = async (req, res) => {
 // ******************* Like/Unlike Comment *******************
 const likeUnlike = async (req, res) => {
     try {
+
         const token = req.headers.authorization.split(" ")[1];
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.SEC_KEY);
 
-        const comment = await Comment.findById(req.params.commentId)
+        const userId = tokenData._id.toString();
 
-        if (comment.likeBy.includes(tokenData._id)) {
-            comment.likeBy = comment.likeBy.filter(userId => userId != tokenData._id)
+        const comment = await Comment.findById(req.params.commentId);
+
+        if (!comment) {
+            return res.status(404).json({
+                message: "Comment not found"
+            });
         }
-        else {
-            if (comment.dislikeBy.includes(tokenData._id)) {
-                comment.dislikeBy = comment.dislikeBy.filter(userId => userId != tokenData._id)
+
+        const alreadyLiked = comment.likeBy.some(
+            id => id.toString() === userId
+        );
+
+        if (alreadyLiked) {
+
+            comment.likeBy = comment.likeBy.filter(
+                id => id.toString() !== userId
+            );
+
+        } else {
+
+            comment.dislikeBy = comment.dislikeBy.filter(
+                id => id.toString() !== userId
+            );
+
+            comment.likeBy.push(userId);
+        }
+
+        await comment.save();
+
+        return res.status(200).json({
+            message: alreadyLiked
+                ? "Comment unliked"
+                : "Comment liked",
+
+            comment: {
+                _id: comment._id,
+                likeCount: comment.likeBy.length,
+                dislikeCount: comment.dislikeBy.length,
+                isLike: !alreadyLiked,
+                isDislike: false
             }
-            comment.likeBy.push(tokenData._id)
-        }
-        await comment.save()
-        res.status(200).json({
-            comment: comment
-        })
+        });
 
-    }
-    catch (err) {
-        console.log(err)
-        res.status(500).json({
-            error: err
-        })
+    } catch (err) {
+
+        console.log(err);
+
+        return res.status(500).json({
+            error: err.message
+        });
     }
 }
 
@@ -161,61 +236,62 @@ const likeUnlike = async (req, res) => {
 // ******************* Dislike/Undislike Comment *******************
 const dislikeUndislike = async (req, res) => {
     try {
+
         const token = req.headers.authorization.split(" ")[1];
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const tokenData = jwt.verify(token, process.env.SEC_KEY);
 
-        const comment = await Comment.findById(req.params.commentId)
+        const userId = tokenData._id.toString();
 
-        if (comment.dislikeBy.includes(tokenData._id)) {
-            comment.dislikeBy = comment.dislikeBy.filter(userId => userId != tokenData._id)
+        const comment = await Comment.findById(req.params.commentId);
+
+        if (!comment) {
+            return res.status(404).json({
+                message: "Comment not found"
+            });
         }
-        else {
-            if (comment.likeBy.includes(tokenData._id)) {
-                comment.likeBy = comment.likeBy.filter(userId => userId != tokenData._id)
+
+        const alreadyDisliked = comment.dislikeBy.some(
+            id => id.toString() === userId
+        );
+
+        if (alreadyDisliked) {
+
+            comment.dislikeBy = comment.dislikeBy.filter(
+                id => id.toString() !== userId
+            );
+
+        } else {
+
+            comment.likeBy = comment.likeBy.filter(
+                id => id.toString() !== userId
+            );
+
+            comment.dislikeBy.push(userId);
+        }
+
+        await comment.save();
+
+        return res.status(200).json({
+            message: alreadyDisliked
+                ? "Comment undisliked"
+                : "Comment disliked",
+
+            comment: {
+                _id: comment._id,
+                likeCount: comment.likeBy.length,
+                dislikeCount: comment.dislikeBy.length,
+                isLike: false,
+                isDislike: !alreadyDisliked
             }
-            comment.dislikeBy.push(tokenData._id)
-        }
-        await comment.save()
-        res.status(200).json({
-            comment: comment
-        })
+        });
 
-    }
-    catch (err) {
-        console.log(err)
-        res.status(500).json({
-            error: err
-        })
-    }
-}
+    } catch (err) {
 
+        console.log(err);
 
-// ******************* Delete Comment *******************  
-const deleteComment = async (req, res) => {
-    try {
-        const token = req.headers.authorization.split(" ")[1];
-        const tokenData = jwt.verify(token, process.env.SEC_KEY)
-
-        const comment = await Comment.findById(req.params.commentId)
-        const video = await Video.findById(comment.videoId)
-
-        if (comment.commentBy.toString() !== tokenData._id && video.uploadedBy.toString() !== tokenData.userId) {
-            return res.status(403).json({
-                message: "You are not authorized to delete this comment"
-            })
-        }
-        else {
-            const data = await Comment.findByIdAndDelete(req.params.commentId)
-            return res.status(200).json({
-                message: "Comment deleted successfully"
-            })
-        }
-    }
-    catch (err) {
-        console.log(err)
-        res.status(500).json({
-            error: err
-        })
+        return res.status(500).json({
+            error: err.message
+        });
     }
 }
 
