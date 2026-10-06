@@ -126,10 +126,10 @@ const getAllComment = async (req, res) => {
     }
 }
 
-// ******************* Edit Comment *******************
+
+ // ******************* Edit Comment *******************
 const editComment = async (req, res) => {
     try {
-
         const token = req.headers.authorization?.split(" ")[1];
 
         if (!token) {
@@ -139,35 +139,114 @@ const editComment = async (req, res) => {
         }
 
         const tokenData = jwt.verify(token, process.env.SEC_KEY);
+        const userId = tokenData._id.toString();
+
+        const { comment: newText } = req.body;
+
+        if (!newText || !newText.trim()) {
+            return res.status(400).json({
+                message: "Comment cannot be empty"
+            });
+        }
+
+        if (newText.length > 1000) {
+            return res.status(400).json({
+                message: "Comment cannot exceed 1000 characters"
+            });
+        }
+
+        const existingComment = await Comment.findById(
+            req.params.commentId
+        );
+
+        if (!existingComment) {
+            return res.status(404).json({
+                message: "Comment not found"
+            });
+        }
+
+        if (existingComment.commentBy.toString() !== userId) {
+            return res.status(403).json({
+                message: "You are not authorized to edit this comment"
+            });
+        }
+
+        existingComment.comment = newText.trim();
+        await existingComment.save();
+
+        return res.status(200).json({
+            message: "Comment updated successfully",
+            comment: {
+                _id: existingComment._id,
+                comment: existingComment.comment,
+                updatedAt: existingComment.updatedAt
+            }
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+};
+
+
+ // ******************* Delete Comment *******************
+const deleteComment = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+
+        if (!token) {
+            return res.status(401).json({
+                message: "Unauthorized"
+            });
+        }
+
+        const tokenData = jwt.verify(token, process.env.SEC_KEY);
+        const userId = tokenData._id.toString();
 
         const comment = await Comment.findById(req.params.commentId);
 
         if (!comment) {
             return res.status(404).json({
                 message: "Comment not found"
-            })
-        }
-        else if (comment.commentBy.toString() !== tokenData._id) {
-            return res.status(403).json({
-                message: "You are not authorized to edit this comment"
-            })
-        }
-        else {
-            const updatedComment = await Comment.findByIdAndUpdate(req.params.commentId, { comment: req.body.comment }, { new: true })
-            return res.status(200).json({
-                message: "Comment updated successfully",
-                Comment: updatedComment
-            })
+            });
         }
 
+        const video = await Video.findById(comment.videoId);
+
+        if (!video) {
+            return res.status(404).json({
+                message: "Video not found"
+            });
+        }
+
+        const isCommentOwner =
+            comment.commentBy.toString() === userId;
+
+        const isVideoOwner =
+            video.uploadedBy.toString() === userId;
+
+        if (!isCommentOwner && !isVideoOwner) {
+            return res.status(403).json({
+                message: "You are not authorized to delete this comment"
+            });
+        }
+
+        await Comment.findByIdAndDelete(req.params.commentId);
+
+        return res.status(200).json({
+            message: "Comment deleted successfully"
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: err.message
+        });
     }
-    catch (err) {
-        console.log(err)
-        res.status(500).json({
-            error: err
-        })
-    }
-}
+};
 
 
 // ******************* Like/Unlike Comment *******************
