@@ -238,11 +238,62 @@ const uploadCoverProfilePic = async (req, res) => {
     }
 }
 
+const getMyProfile = async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                error: 'Authorization token required'
+            })
+        }
+
+        const token = authHeader.split(' ')[1]
+
+        const tokenData = jwt.verify(
+            token,
+            process.env.SEC_KEY
+        )
+
+        const user = await User.findById(tokenData._id)
+            .select(
+                'channelName email description profilePicUrl coverPicUrl subscribers subscribedTo'
+            )
+
+        if (!user) {
+            return res.status(404).json({
+                error: 'Channel not found'
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                _id: user._id,
+                channelName: user.channelName,
+                email: user.email,
+                description: user.description,
+                profilePicUrl: user.profilePicUrl,
+                coverPicUrl: user.coverPicUrl,
+                subscribersCount: user.subscribers.length,
+                subscribedToCount: user.subscribedTo.length
+            }
+        })
+
+    } catch (err) {
+        console.log('Get profile error:', err.message)
+
+        return res.status(401).json({
+            error: 'Invalid or expired token'
+        })
+    }
+}
 
 
 module.exports = {
     signup,
     login,
+    getMyProfile,
     subscribe,
     unsubscribe,
     uploadProfile,

@@ -5,7 +5,8 @@ const {signup,
     subscribe,
     unsubscribe,
     uploadProfile,
-    uploadCoverProfilePic
+    uploadCoverProfilePic,
+    getMyProfile
 } = require('../controllers/userController')
 
 router.post('/signup',signup)
@@ -14,5 +15,7 @@ router.put('/subscribe/:channelId',subscribe)
 router.put('/unsubscribe/:channelId',unsubscribe)
 router.put('/uploadProfile',uploadProfile)
 router.put('/uploadCoverPic',uploadCoverProfilePic)
+router.get('/profile', getMyProfile)
+
 
 module.exports = router
