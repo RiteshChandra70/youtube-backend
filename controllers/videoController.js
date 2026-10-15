@@ -93,49 +93,31 @@ const getVideoById = async (req, res) => {
     }
 }
 
-
-// ******************* Get My Videos *******************
-
+// ******************* Get My Uploaded Videos *******************
 const getMyVideos = async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
+        const token = req.headers.authorization?.split(' ')[1]
 
-        if (!authHeader?.startsWith("Bearer ")) {
+        if (!token) {
             return res.status(401).json({
-                message: "Please login first"
-            });
+                success: false,
+                message: 'Please login first'
+            })
         }
 
-        const token = authHeader.split(" ")[1];
-        const tokenData = jwt.verify(
-            token,
-            process.env.SEC_KEY
-        );
-
-        const page = Math.max(
-            1,
-            parseInt(req.query.page, 10) || 1
-        );
-
-        const limit = 8;
-        const skip = (page - 1) * limit;
-
-        const filter = {
-            uploadedBy: tokenData._id
-        };
+        const tokenData = jwt.verify(token, process.env.SEC_KEY)
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1)
+        const limit = 8
+        const filter = { uploadedBy: tokenData._id }
 
         const [videos, totalVideos] = await Promise.all([
             Video.find(filter)
                 .sort({ createdAt: -1, _id: -1 })
-                .skip(skip)
+                .skip((page - 1) * limit)
                 .limit(limit)
-                .populate(
-                    "uploadedBy",
-                    "channelName profilePicUrl subscribers"
-                ),
-
+                .populate('uploadedBy', 'channelName profilePicUrl subscribers'),
             Video.countDocuments(filter)
-        ]);
+        ])
 
         return res.status(200).json({
             success: true,
@@ -146,17 +128,52 @@ const getMyVideos = async (req, res) => {
                 totalPages: Math.ceil(totalVideos / limit),
                 limit
             }
-        });
-
+        })
     } catch (err) {
-        console.error("Get My Videos Error:", err.message);
-
+        console.error('Get My Videos Error:', err.message)
         return res.status(500).json({
-            message: "Failed to fetch channel videos"
-        });
+            success: false,
+            message: 'Failed to fetch your videos'
+        })
     }
-};
+}
 
+
+// ******************* Get Videos by Channel ID *******************
+const getVideosByUserId = async (req, res) => {
+    try {
+        const { userId } = req.params
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1)
+        const limit = 8
+        const filter = { uploadedBy: userId }
+
+        const [videos, totalVideos] = await Promise.all([
+            Video.find(filter)
+                .sort({ createdAt: -1, _id: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .populate('uploadedBy', 'channelName profilePicUrl subscribers'),
+            Video.countDocuments(filter)
+        ])
+
+        return res.status(200).json({
+            success: true,
+            videos,
+            pagination: {
+                currentPage: page,
+                totalVideos,
+                totalPages: Math.ceil(totalVideos / limit),
+                limit
+            }
+        })
+    } catch (err) {
+        console.error('Get Videos By User ID Error:', err.message)
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch channel videos'
+        })
+    }
+}
 
 
 // ******************* Like/Unlike Video *******************
@@ -343,4 +360,16 @@ const deleteVideo = async (req, res) => {
 }
 
 
-module.exports = { upload, getAllVideo, getVideoById, getMyVideos, likeUnlike, dislikeUndislike, deleteVideo, updateVideoDetails }
+
+module.exports = {
+    upload,
+    getAllVideo,
+    getVideoById,
+    getMyVideos,
+    getVideosByUserId,
+    likeUnlike,
+    dislikeUndislike,
+    deleteVideo,
+    updateVideoDetails
+}
+

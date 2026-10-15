@@ -5,6 +5,7 @@ const {
     getAllVideo,
     getVideoById,
     getMyVideos,
+    getVideosByUserId,
     likeUnlike,
     dislikeUndislike,
     deleteVideo,
@@ -14,8 +15,9 @@ const {
 
 router.post('/upload', upload)
 router.get('/getAllVideo', getAllVideo)
-router.get('/my-videos', getMyVideos)
 router.get('/getVideo/:videoId', getVideoById)
+router.get('/my-videos', getMyVideos)
+router.get('/user/:userId', getVideosByUserId)
 router.put('/like/:videoId', likeUnlike)
 router.put('/dislike/:videoId', dislikeUndislike)
 router.delete('/delete/:videoId', deleteVideo)
