@@ -290,10 +290,47 @@ const getMyProfile = async (req, res) => {
 }
 
 
+const getProfileById = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId)
+            .select(
+                'channelName description profilePicUrl coverPicUrl subscribers subscribedTo'
+            )
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'Channel not found'
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                _id: user._id,
+                channelName: user.channelName,
+                description: user.description,
+                profilePicUrl: user.profilePicUrl,
+                coverPicUrl: user.coverPicUrl,
+                subscribersCount: user.subscribers.length,
+                subscribedToCount: user.subscribedTo.length
+            }
+        })
+    } catch (err) {
+        console.log('Get profile by ID error:', err.message)
+
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid user ID or request'
+        })
+    }
+}
+
 module.exports = {
     signup,
     login,
     getMyProfile,
+    getProfileById,
     subscribe,
     unsubscribe,
     uploadProfile,
