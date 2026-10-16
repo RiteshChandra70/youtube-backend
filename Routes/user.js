@@ -1,6 +1,8 @@
 const express = require('express')
 const router = express.Router()
-const {signup,
+
+const {
+    signup,
     login,
     subscribe,
     unsubscribe,
@@ -10,14 +12,18 @@ const {signup,
     getProfileById
 } = require('../controllers/userController')
 
-router.post('/signup',signup)
-router.post('/login',login)
-router.put('/subscribe/:channelId',subscribe)
-router.put('/unsubscribe/:channelId',unsubscribe)
-router.put('/uploadProfile',uploadProfile)
-router.put('/uploadCoverPic',uploadCoverProfilePic)
+router.post('/signup', signup)
+router.post('/login', login)
+
+router.put('/subscribe/:channelId', subscribe)
+router.put('/unsubscribe/:channelId', unsubscribe)
+
+// Image upload routes
+router.post('/uploadProfile', uploadProfile)
+router.post('/uploadCoverPic', uploadCoverProfilePic)
+
+// Profile routes
 router.get('/profile', getMyProfile)
 router.get('/profile/:userId', getProfileById)
-
 
 module.exports = router
